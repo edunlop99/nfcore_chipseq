@@ -1,8 +1,10 @@
 .nextflow*
 work/
+raw_data/
 data/
 results/
 .DS_Store
 testing/
 testing*
 *.pyc
+aws*

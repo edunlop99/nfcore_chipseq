@@ -1,0 +1,16 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    { "Effect": "Allow", "Resource": "*", "Action": [
+        "batch:SubmitJob","batch:DescribeJobs","batch:ListJobs","batch:CancelJob",
+        "batch:TerminateJob","batch:DescribeJobQueues","batch:DescribeComputeEnvironments",
+        "batch:RegisterJobDefinition","batch:DescribeJobDefinitions","batch:TagResource",
+        "ecs:DescribeTasks","ecs:DescribeContainerInstances",
+        "ec2:DescribeInstances","ec2:DescribeInstanceTypes","ec2:DescribeInstanceAttribute",
+        "ec2:DescribeInstanceTypeOfferings","ec2:DescribeInstanceStatus","logs:GetLogEvents" ] },
+    { "Effect": "Allow", "Action": ["s3:ListBucket","s3:GetBucketLocation"],
+      "Resource": "arn:aws:s3:::nextflow-data-117281298623-us-east-1-an" },
+    { "Effect": "Allow", "Action": ["s3:GetObject","s3:PutObject","s3:DeleteObject"],
+      "Resource": "arn:aws:s3:::nextflow-data-117281298623-us-east-1-an/*" }
+  ]
+}
