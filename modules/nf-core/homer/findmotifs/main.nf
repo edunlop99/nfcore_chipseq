@@ -15,7 +15,7 @@ process HOMER_FINDMOTIFS {
     output:
     tuple val(meta), path("${prefix}"),                   emit: motifs
     tuple val(meta), path("${prefix}/knownResults.txt"),  emit: known
-    tuple val("${task.process}"), val('homer'), val("4.11"), emit: versions_homer, topic: versions
+    tuple val("${task.process}"), val('homer'), val("4.11"), emit: versions, topic: versions
 
     when:
     task.ext.when == null || task.ext.when
