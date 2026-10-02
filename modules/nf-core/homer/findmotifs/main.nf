@@ -15,7 +15,7 @@ process HOMER_FINDMOTIFS {
     output:
     tuple val(meta), path("${prefix}"),                   emit: motifs
     tuple val(meta), path("${prefix}/knownResults.txt"),  emit: known
-    tuple val("${task.process}"), val('homer'), val("4.11"), emit: versions, topic: versions
+    path "versions.yml",                                  emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -33,6 +33,11 @@ process HOMER_FINDMOTIFS {
         -p ${task.cpus} \\
         -preparsedDir preparsed \\
         ${args}
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        homer: $VERSION
+    END_VERSIONS
     """
 
     stub:
