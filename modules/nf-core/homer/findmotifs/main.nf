@@ -23,6 +23,7 @@ process HOMER_FINDMOTIFS {
     script:
     def args = task.ext.args ?: ''
     prefix   = task.ext.prefix ?: "${meta.id}_motifs"
+    def VERSION = '4.11'
     """
     mkdir -p preparsed
 
