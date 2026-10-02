@@ -4,6 +4,7 @@
 
 include { MACS3_CALLPEAK           } from '../../modules/nf-core/macs3/callpeak/main'
 include { HOMER_ANNOTATEPEAKS      } from '../../modules/nf-core/homer/annotatepeaks/main'
+include { HOMER_FINDMOTIFS          } from '../../modules/nf-core/homer/findmotifs/main'
 
 include { FRIP_SCORE               } from '../../modules/local/frip_score'
 include { MULTIQC_CUSTOM_PEAKS     } from '../../modules/local/multiqc_custom_peaks'
