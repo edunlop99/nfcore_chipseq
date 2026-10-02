@@ -103,6 +103,18 @@ workflow BAM_PEAKS_CALL_QC_ANNOTATE_MACS3_HOMER {
         ch_homer_annotatepeaks = HOMER_ANNOTATEPEAKS.out.txt
         ch_versions = ch_versions.mix(HOMER_ANNOTATEPEAKS.out.versions.first())
 
+        //
+        // Find motifs with HOMER
+        //
+        ch_motif_input = narrow_peak ? MACS3_CALLPEAK.out.summit : ch_macs3_peaks // if narrow_peak, use summits; broad peaks use entire peak region
+        HOMER_FINDMOTIFS (
+            ch_motif_input,
+            ch_fasta
+        )
+        ch_homer_findmotifs = HOMER_FINDMOTIFS.out.motifs
+        ch_homer_knownmotifs = HOMER_FINDMOTIFS.out.known
+        ch_versions = ch_versions.mix(HOMER_FINDMOTIFS.out.versions.first())
+
         if (!skip_peak_qc) {
             //
             // MACS3 QC plots with R
@@ -137,12 +149,15 @@ workflow BAM_PEAKS_CALL_QC_ANNOTATE_MACS3_HOMER {
     bed                          = MACS3_CALLPEAK.out.bed           // channel: [ val(meta), [ bed ] ]
     bedgraph                     = MACS3_CALLPEAK.out.bdg           // channel: [ val(meta), [ bedgraph ] ]
 
+
     frip_txt                     = FRIP_SCORE.out.txt               // channel: [ val(meta), [ txt ] ]
 
     frip_multiqc                 = MULTIQC_CUSTOM_PEAKS.out.frip    // channel: [ val(meta), [ frip ] ]
     peak_count_multiqc           = MULTIQC_CUSTOM_PEAKS.out.count   // channel: [ val(meta), [ counts ] ]
 
     homer_annotatepeaks          = ch_homer_annotatepeaks           // channel: [ val(meta), [ txt ] ]
+    homer_motifs                 = ch_homer_findmotifs              // channel: [ val(meta), [ motifs ] ]
+    homer_knownmotifs            = ch_homer_knownmotifs             // channel: [ val(meta), [ knownResults.txt ] ]
 
     plot_macs3_qc_txt            = ch_plot_macs3_qc_txt             // channel: [ txt ]
     plot_macs3_qc_pdf            = ch_plot_macs3_qc_pdf             // channel: [ pdf ]
