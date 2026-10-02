@@ -106,7 +106,7 @@ workflow BAM_PEAKS_CALL_QC_ANNOTATE_MACS3_HOMER {
         //
         // Find motifs with HOMER
         //
-        ch_motif_input = narrow_peak ? MACS3_CALLPEAK.out.summit : ch_macs3_peaks // if narrow_peak, use summits; broad peaks use entire peak region
+        ch_motif_input = params.narrow_peak ? MACS3_CALLPEAK.out.summit : ch_macs3_peaks // if narrow_peak, use summits; broad peaks use entire peak region
         HOMER_FINDMOTIFS (
             ch_motif_input,
             ch_fasta
