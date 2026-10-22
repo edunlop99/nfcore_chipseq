@@ -8,9 +8,10 @@ workflow INPUT_CHECK {
     take:
     samplesheet // file: /path/to/samplesheet.csv
     seq_center  // string: sequencing center for read group
+    no_control  // boolean: whether to skip control samples
 
     main:
-    SAMPLESHEET_CHECK ( samplesheet )
+    SAMPLESHEET_CHECK ( samplesheet, no_control )
         .csv
         .splitCsv ( header:true, sep:',' )
         .map { create_fastq_channel(it, seq_center) }
@@ -28,6 +29,9 @@ def create_fastq_channel(LinkedHashMap row, String seq_center) {
     meta.single_end = row.single_end.toBoolean()
     meta.antibody   = row.antibody
     meta.control    = row.control
+    meta.treatment  = row.treatment
+    meta.cell_type  = row.cell_type
+    //meta.group = "${meta.antibody}_${meta.treatment}_${meta.cell_type}".toString() // i.e. SIN3A_E6R_PFC, so that consensus peaks can be grouped accordingly
 
     def read_group = "\'@RG\\tID:${meta.id}\\tSM:${meta.id - ~/_T\d+$/}\\tPL:ILLUMINA\\tLB:${meta.id}\\tPU:1\'"
     if (seq_center) {

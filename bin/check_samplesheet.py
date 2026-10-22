@@ -9,11 +9,12 @@ import re
 
 def parse_args(args=None):
     Description = "Reformat nf-core/chipseq samplesheet file and check its contents."
-    Epilog = "Example usage: python check_samplesheet.py <FILE_IN> <FILE_OUT>"
+    Epilog = "Example usage: python check_samplesheet.py <FILE_IN> <FILE_OUT> --no_control <true/false>"
 
     parser = argparse.ArgumentParser(description=Description, epilog=Epilog)
     parser.add_argument("FILE_IN", help="Input samplesheet file.")
     parser.add_argument("FILE_OUT", help="Output file.")
+    parser.add_argument("--no_control", action="store_true", help="Whether to skip control samples.")
     return parser.parse_args(args)
 
 
@@ -46,13 +47,21 @@ def check_samplesheet(file_in, file_out):
     SPT5_INPUT,SRR5204810_Spt5-ChIP_Input2_SacCer_ChIP-Seq_ss100k_R1.fastq.gz,SRR5204810_Spt5-ChIP_Input2_SacCer_ChIP-Seq_ss100k_R2.fastq.gz,2,,,
     For an example see:
     https://raw.githubusercontent.com/nf-core/test-datasets/chipseq/samplesheet/v2.1/samplesheet_test.csv
+
+    UPDATED: to add treatment and cell type columns:
+    sample,fastq_1,fastq_2,replicate,antibody,control,control_replicate,treatment,cell_type
+    SPT5_T0,SRR1822153_1.fastq.gz,SRR1822153_2.fastq.gz,SPT5,1,SPT5_INPUT,1,T0,HeLa
+    SPT5_T0,SRR1822154_1.fastq.gz,SRR1822154_2.fastq.gz,SPT5,2,SPT5_INPUT,2,T0,HeLa
+    SPT5_INPUT,SRR5204809_Spt5-ChIP_Input1_SacCer_ChIP-Seq_ss100k_R1.fastq.gz,SRR5204809_Spt5-ChIP_Input1_SacCer_ChIP-Seq_ss100k_R2.fastq.gz,1,,,,,
+    SPT5_INPUT,SRR5204810_Spt5-ChIP_Input2_SacCer_ChIP-Seq_ss100k_R1.fastq.gz,SRR5204810_Spt5-ChIP_Input2_SacCer_ChIP-Seq_ss100k_R2.fastq.gz,2,,,,,
+
     """
 
     sample_mapping_dict = {}
     with open(file_in, "r", encoding="utf-8-sig") as fin:
         ## Check header
         MIN_COLS = 3
-        HEADER = ["sample", "fastq_1", "fastq_2", "replicate", "antibody", "control", "control_replicate"]
+        HEADER = ["sample", "fastq_1", "fastq_2", "replicate", "antibody", "control", "control_replicate", "treatment", "cell_type"]
         header = [x.strip('"') for x in fin.readline().strip().split(",")]
         if header[: len(HEADER)] != HEADER:
             print(f"ERROR: Please check samplesheet header -> {','.join(header)} != {','.join(HEADER)}")
@@ -79,7 +88,7 @@ def check_samplesheet(file_in, file_out):
                     )
 
                 ## Check sample name entries
-                sample, fastq_1, fastq_2, replicate, antibody, control, control_replicate = lspl[: len(HEADER)]
+                sample, fastq_1, fastq_2, replicate, antibody, control, control_replicate, treatment, cell_type = lspl[: len(HEADER)]
                 if sample.find(" ") != -1:
                     print(f"WARNING: Spaces have been replaced by underscores for sample: {sample}")
                     sample = sample.replace(" ", "_")
@@ -109,19 +118,25 @@ def check_samplesheet(file_in, file_out):
                     print_error("Replicate id not an integer!", "Line {}".format(line_number), line)
                     sys.exit(1)
 
-                ## Check antibody and control columns have valid values
+                ## Check antibody and control columns have valid values (and if running without control, set control to '')
                 if antibody:
                     if antibody.find(" ") != -1:
                         print(f"WARNING: Spaces have been replaced by underscores for antibody: {antibody}")
                         antibody = antibody.replace(" ", "_")
-                    if not control:
+                    if not control and not no_control:
                         print_error(
-                            "Both antibody and control columns must be specified!",
+                            "Both antibody and control columns must be specified! (If running without control, use the --no_control flag)",
                             "Line {}".format(line_number),
                             line,
                         )
+                    elif control and no_control:
+                        print("WARNING: Control column has been specified but the --no_control flag is set!")
+                    else:
+                        print(f"WARNING: Running without control samples.")
+                        control = ''  # Will set control to '' if running without control
 
-                if control:
+                ## Check that control samples have valid replicate IDs
+                if control and not no_control:
                     if control.find(" ") != -1:
                         print(f"WARNING: Spaces have been replaced by underscores for control: {control}")
                         control = control.replace(" ", "_")
@@ -131,23 +146,38 @@ def check_samplesheet(file_in, file_out):
                     control = "{}_REP{}".format(control, control_replicate)
                     if not antibody:
                         print_error(
-                            "Both antibody and control columns must be specified!",
+                            "Antibody column must be specified for IP samples!",
                             "Line {}".format(line_number),
                             line,
                         )
 
+                ## Check treatment and cell_type columns have valid values (if present)
+                if treatment and treatment.find(" ") != -1:
+                    print(f"WARNING: Spaces have been replaced by underscores for treatment: {treatment}")
+                    treatment = treatment.replace(" ", "_")
+                else:
+                    print(f"WARNING: Treatment column is empty for line {line_number}")
+                    treatment = ''
+
+                if cell_type and cell_type.find(" ") != -1:
+                    print(f"WARNING: Spaces have been replaced by underscores for cell type: {cell_type}")
+                    cell_type = cell_type.replace(" ", "_")
+                else:
+                    print(f"WARNING: Cell type column is empty for line {line_number}")
+                    cell_type = ''
+
                 ## Auto-detect paired-end/single-end
-                sample_info = []  ## [single_end, fastq_1, fastq_2, replicate, antibody, control]
+                sample_info = []  ## [single_end, fastq_1, fastq_2, replicate, antibody, control, treatment, cell_type]
                 ## Paired-end short reads
                 if sample and fastq_1 and fastq_2:
-                    sample_info = ["0", fastq_1, fastq_2, replicate, antibody, control]
+                    sample_info = ["0", fastq_1, fastq_2, replicate, antibody, control, treatment, cell_type]
                 ## Single-end short reads
                 elif sample and fastq_1 and not fastq_2:
-                    sample_info = ["1", fastq_1, fastq_2, replicate, antibody, control]
+                    sample_info = ["1", fastq_1, fastq_2, replicate, antibody, control, treatment, cell_type]
                 else:
                     print_error("Invalid combination of columns provided!", "Line {}".format(line_number), line)
 
-                ## Create sample mapping dictionary = {sample: [[ single_end, fastq_1, fastq_2, replicate, antibody, control ]]}
+                ## Create sample mapping dictionary = {sample: [[ single_end, fastq_1, fastq_2, replicate, antibody, control, treatment, cell_type ]]}
                 replicate = int(replicate)
                 sample_info = sample_info + lspl[len(HEADER) :]
                 if sample not in sample_mapping_dict:
@@ -175,6 +205,8 @@ def check_samplesheet(file_in, file_out):
                         "replicate",
                         "antibody",
                         "control",
+                        "treatment",
+                        "cell_type",
                     ]
                 )
                 + "\n"
@@ -190,7 +222,7 @@ def check_samplesheet(file_in, file_out):
                     )
                     sys.exit(1)
 
-                ## Check that multiple replicates are of the same datatype i.e. single-end / paired-end
+                ## Check that multiple replicates are of the same datatype i.e. single-end / paired-end, and 
                 if not all(
                     x[0][0] == sample_mapping_dict[sample][1][0][0] for x in sample_mapping_dict[sample].values()
                 ):
@@ -213,8 +245,8 @@ def check_samplesheet(file_in, file_out):
                         )
 
                     for idx, val in enumerate(sample_mapping_dict[sample][replicate]):
-                        control = "_REP".join(val[-1].split("_REP")[:-1])
-                        control_replicate = val[-1].split("_REP")[-1]
+                        control = "_REP".join(val[5].split("_REP")[:-1])
+                        control_replicate = val[5].split("_REP")[-1]
                         if control and (
                             control not in sample_mapping_dict.keys()
                             or int(control_replicate) not in sample_mapping_dict[control].keys()
@@ -222,7 +254,7 @@ def check_samplesheet(file_in, file_out):
                             print_error(
                                 f"Control identifier and replicate has to match a provided sample identifier and replicate!",
                                 "Control",
-                                val[-1],
+                                val[5],
                             )
 
                     ## Write to file

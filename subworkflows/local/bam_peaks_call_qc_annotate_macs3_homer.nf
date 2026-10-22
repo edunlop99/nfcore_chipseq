@@ -3,6 +3,7 @@
 //
 
 include { MACS3_CALLPEAK           } from '../../modules/nf-core/macs3/callpeak/main'
+//include { MACS3_BDGDIFF            } from '../../modules/nf-core/macs3/bdgdiff/main'
 include { HOMER_ANNOTATEPEAKS      } from '../../modules/nf-core/homer/annotatepeaks/main'
 include { HOMER_FINDMOTIFS          } from '../../modules/nf-core/homer/findmotifs/main'
 

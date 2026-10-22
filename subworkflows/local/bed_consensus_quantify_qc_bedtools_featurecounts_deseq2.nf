@@ -12,7 +12,7 @@ include { DESEQ2_QC              } from '../../modules/local/deseq2_qc'
 workflow BED_CONSENSUS_QUANTIFY_QC_BEDTOOLS_FEATURECOUNTS_DESEQ2 {
     take:
     ch_peaks                            // channel: [ val(meta), [ peaks ] ]
-    ch_bams                             // channel: [ val(meta), [ ip_bams ] ]
+    ch_bams                             // channel: [ val(meta), [ ip_bams ] ] 
     ch_fasta                            // channel: [ fasta ]
     ch_gtf                              // channel: [ gtf ]
     ch_deseq2_pca_header_multiqc        // channel: [ header_file ]
@@ -30,23 +30,19 @@ workflow BED_CONSENSUS_QUANTIFY_QC_BEDTOOLS_FEATURECOUNTS_DESEQ2 {
     ch_peaks
         .map {
             meta, peak ->
-                [ meta.antibody, meta.id - ~/_REP\d+$/, peak ]
+                [ meta.group, meta.id - ~/_REP\d+$/, meta, peak ]
         }
         .groupTuple()
         .map {
-            antibody, groups, peaks ->
-                [
-                    antibody,
-                    groups.groupBy().collectEntries { [(it.key) : it.value.size()] },
-                    peaks
-                ]
-        }
-        .map {
-            antibody, groups, peaks ->
+            group, sample_names, metas, peaks ->
+                def counts = sample_names.groupBy().collectEntries { [(it.key) : it.value.size()] }
                 def meta_new = [:]
-                meta_new.id = antibody
-                meta_new.multiple_groups = groups.size() > 1
-                meta_new.replicates_exist = groups.max { it.value }.value > 1
+                meta_new.id               = group
+                meta_new.antibody         = metas[0].antibody
+                meta_new.treatment        = metas[0].treatment
+                meta_new.cell_type        = metas[0].cell_type
+                meta_new.multiple_groups  = counts.size() > 1
+                meta_new.replicates_exist = counts.max { it.value }.value > 1
                 [ meta_new, peaks ]
         }
         .set { ch_antibody_peaks }

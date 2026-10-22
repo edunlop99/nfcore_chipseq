@@ -9,6 +9,7 @@ process SAMPLESHEET_CHECK {
 
     input:
     path samplesheet
+    val no_control
 
     output:
     path '*.csv'       , emit: csv
@@ -22,6 +23,7 @@ process SAMPLESHEET_CHECK {
     """
     check_samplesheet.py \\
         $samplesheet \\
+        --no_control $no_control \\
         $args
 
     cat <<-END_VERSIONS > versions.yml

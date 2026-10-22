@@ -110,7 +110,8 @@ workflow CHIPSEQ {
     //
     INPUT_CHECK (
         ch_input,
-        params.seq_center
+        params.seq_center,
+        params.no_control
     )
     ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
     // TODO: OPTIONAL, you can use nf-validation plugin to create an input channel from the samplesheet with Channel.fromSamplesheet("input")
@@ -388,27 +389,36 @@ workflow CHIPSEQ {
     //
     // Create channels: [ meta, [ ip_bam, control_bam ] [ ip_bai, control_bai ] ]
     //
+
+    // If params.no_control is 'true', create a channel for genome BAM and BAI files without control
+
     BAM_FILTER_BAMTOOLS
         .out
         .bam
-        .join(BAM_FILTER_BAMTOOLS.out.bai, by: [0])
-        .set { ch_genome_bam_bai }
+        .join(BAM_FILTER_BAMTOOLS.out.bai, by: [0]) // Join BAM and BAI files by the first column (meta), creating a combined channel for genome BAM and BAI files for all IP and control samples
+        .set { ch_genome_bam_bai } // [meta, bam, bai]
 
-    ch_genome_bam_bai
+    if ( params.no_control == false ) { // if running with control samples
+        ch_genome_bam_bai
         .map {
             meta, bam, bai ->
-                meta.control ? null : [ meta.id, [ bam ] , [ bai ] ]
+                meta.control ? null : [ meta.id, [ bam ] , [ bai ] ] // if meta.control is null, this is a control sample with a correspondng IP
         }
-        .set { ch_control_bam_bai }
+        .set { ch_control_bam_bai } // [meta, bam, bai] for control samples without corresponding IP
 
-    ch_genome_bam_bai
-        .map {
-            meta, bam, bai ->
-                meta.control ? [ meta.control, meta, [ bam ], [ bai ] ] : null
-        }
-        .combine(ch_control_bam_bai, by: 0)
-        .map { it -> [ it[1] , it[2] + it[4], it[3] + it[5] ] }
-        .set { ch_ip_control_bam_bai }
+        ch_genome_bam_bai
+            .map {
+                meta, bam, bai ->
+                    meta.control ? [ meta.control, meta, [ bam ], [ bai ] ] : null // if meta.control is not null, this is an IP sample with a corresponding control
+            }
+            .combine(ch_control_bam_bai, by: 0) // join IP and control BAM and BAI files by the first column (meta)
+            .map { it -> [ it[1] , it[2] + it[4], it[3] + it[5] ] } // restructure combined channel to [ meta, [ip_bam + control_bam], [ip_bai + control_bai] ]
+            .set { ch_ip_control_bam_bai }
+    } else {
+        ch_genome_bam_bai
+            .map { meta, bam, bai -> [ meta, [ bam ], [ bai ] ] } // IP-only: [ meta, [ip_bam], [ip_bai] ]
+            .set { ch_ip_control_bam_bai }
+    }
 
     //
     // MODULE: deepTools plotFingerprint joint QC for IP and control
@@ -440,7 +450,7 @@ workflow CHIPSEQ {
     ch_ip_control_bam_bai
         .map {
             meta, bams, bais ->
-                [ meta , bams[0], bams[1] ]
+                [ meta , bams[0], bams.size() > 1 ? bams[1] : [] ] // if there is no control BAM, use an empty list
         }
         .set { ch_ip_control_bam }
 
@@ -470,11 +480,11 @@ workflow CHIPSEQ {
     ch_deseq2_pca_multiqc        = Channel.empty()
     ch_deseq2_clustering_multiqc = Channel.empty()
     if (!params.skip_consensus_peaks) {
-        // Create channels: [ antibody, [ ip_bams ] ]
+        // Create channels: [ "antibody-treatment-cell_type", [ ip_bams ] ]
         ch_ip_control_bam
             .map {
                 meta, ip_bam, control_bam ->
-                    [ meta.antibody, ip_bam ]
+                    [ meta.group, ip_bam ]
             }
             .groupTuple()
             .set { ch_antibody_bams }
