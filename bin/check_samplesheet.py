@@ -9,12 +9,12 @@ import re
 
 def parse_args(args=None):
     Description = "Reformat nf-core/chipseq samplesheet file and check its contents."
-    Epilog = "Example usage: python check_samplesheet.py <FILE_IN> <FILE_OUT> --no_control <true/false>"
+    Epilog = "Example usage: python check_samplesheet.py <FILE_IN> <FILE_OUT> <--no_control>"
 
     parser = argparse.ArgumentParser(description=Description, epilog=Epilog)
     parser.add_argument("FILE_IN", help="Input samplesheet file.")
     parser.add_argument("FILE_OUT", help="Output file.")
-    parser.add_argument("--no_control", action="store_true", help="Whether to skip control samples.")
+    parser.add_argument("-nc", "--no_control", action="store_true", help="Whether to skip control samples.")
     return parser.parse_args(args)
 
 
@@ -37,7 +37,7 @@ def print_error(error, context="Line", context_str=""):
     sys.exit(1)
 
 
-def check_samplesheet(file_in, file_out):
+def check_samplesheet(file_in, file_out, no_control=False):
     """
     This function checks that the samplesheet follows the following structure:
     sample,fastq_1,fastq_2,replicate,antibody,control,control_replicate
@@ -272,7 +272,7 @@ def check_samplesheet(file_in, file_out):
 
 def main(args=None):
     args = parse_args(args)
-    check_samplesheet(args.FILE_IN, args.FILE_OUT)
+    check_samplesheet(args.FILE_IN, args.FILE_OUT, no_control=args.no_control)
 
 
 if __name__ == "__main__":

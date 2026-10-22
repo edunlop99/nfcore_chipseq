@@ -23,7 +23,6 @@ process SAMPLESHEET_CHECK {
     """
     check_samplesheet.py \\
         $samplesheet \\
-        --no_control $no_control \\
         $args
 
     cat <<-END_VERSIONS > versions.yml
