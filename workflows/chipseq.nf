@@ -110,8 +110,7 @@ workflow CHIPSEQ {
     //
     INPUT_CHECK (
         ch_input,
-        params.seq_center,
-        params.no_control
+        params.seq_center
     )
     ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
     // TODO: OPTIONAL, you can use nf-validation plugin to create an input channel from the samplesheet with Channel.fromSamplesheet("input")

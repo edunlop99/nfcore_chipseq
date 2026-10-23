@@ -8,10 +8,9 @@ workflow INPUT_CHECK {
     take:
     samplesheet // file: /path/to/samplesheet.csv
     seq_center  // string: sequencing center for read group
-    no_control  // boolean: whether to skip control samples
 
     main:
-    SAMPLESHEET_CHECK ( samplesheet, no_control )
+    SAMPLESHEET_CHECK ( samplesheet )
         .csv
         .splitCsv ( header:true, sep:',' )
         .map { create_fastq_channel(it, seq_center) }

@@ -9,7 +9,6 @@ process SAMPLESHEET_CHECK {
 
     input:
     path samplesheet
-    val no_control
 
     output:
     path '*.csv'       , emit: csv
