@@ -134,6 +134,14 @@ def check_samplesheet(file_in, file_out, no_control=False):
                     else:
                         print(f"WARNING: Running without control samples.")
                         control = ''  # Will set control to '' if running without control
+                else:
+                    if not control and not no_control:
+                        print_error(
+                            "Control column must be specified for IP samples!",
+                            "Line {}".format(line_number),
+                            line,
+                        )
+                        sys.exit(1)
 
                 ## Check that control samples have valid replicate IDs
                 if control and not no_control:
