@@ -105,17 +105,19 @@ workflow BAM_PEAKS_CALL_QC_ANNOTATE_MACS3_HOMER {
         ch_homer_annotatepeaks = HOMER_ANNOTATEPEAKS.out.txt
         ch_versions = ch_versions.mix(HOMER_ANNOTATEPEAKS.out.versions.first())
 
-        //
-        // Find motifs with HOMER
-        //
-        ch_motif_input = params.narrow_peak ? MACS3_CALLPEAK.out.bed : ch_macs3_peaks // if narrow_peak, use summits; broad peaks use entire peak region
-        HOMER_FINDMOTIFS (
-            ch_motif_input,
-            ch_fasta
-        )
-        ch_homer_findmotifs = HOMER_FINDMOTIFS.out.motifs
-        ch_homer_knownmotifs = HOMER_FINDMOTIFS.out.known
-        ch_versions = ch_versions.mix(HOMER_FINDMOTIFS.out.versions.first())
+        if (!skip_peak_annotation) {
+            //
+            // Find motifs with HOMER
+            //
+            ch_motif_input = params.narrow_peak ? MACS3_CALLPEAK.out.bed : ch_macs3_peaks // if narrow_peak, use summits; broad peaks use entire peak region
+            HOMER_FINDMOTIFS (
+                ch_motif_input,
+                ch_fasta
+            )
+            ch_homer_findmotifs = HOMER_FINDMOTIFS.out.motifs
+            ch_homer_knownmotifs = HOMER_FINDMOTIFS.out.known
+            ch_versions = ch_versions.mix(HOMER_FINDMOTIFS.out.versions.first())
+        }
 
         if (!skip_peak_qc) {
             //
