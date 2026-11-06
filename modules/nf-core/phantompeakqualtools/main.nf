@@ -12,6 +12,7 @@ process PHANTOMPEAKQUALTOOLS {
     tuple val(meta), path(bam)
 
     output:
+    tuple val(meta), env(FRAGLEN)   , emit: fraglen // adding this to give to MACS3 `--extsize`
     tuple val(meta), path("*.out")  , emit: spp
     tuple val(meta), path("*.pdf")  , emit: pdf
     tuple val(meta), path("*.Rdata"), emit: rdata
@@ -24,10 +25,17 @@ process PHANTOMPEAKQUALTOOLS {
     def args   = task.ext.args ?: ''
     def args2  = task.ext.args2 ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def min_fraglen = task.ext.min_fraglen ?: 60
+    def default_fl  = task.ext.default_fraglen ?: 200
     def VERSION = '1.2.2' // WARN: Version information not provided by tool on CLI. Please update this string when bumping container versions.
     """
     RUN_SPP=`which run_spp.R`
     Rscript $args -e "library(caTools); source(\\"\$RUN_SPP\\")" -c="$bam" -savp="${prefix}.spp.pdf" -savd="${prefix}.spp.Rdata" -out="${prefix}.spp.out" $args2
+    FRAGLEN=\$(cut -f3 ${prefix}.spp.out | cut -d',' -f1)
+    if ! [[ "\$FRAGLEN" =~ ^[0-9]+\$ ]] || [ "\$FRAGLEN" -lt $min_fraglen ]; then
+        echo "WARN: SPP fraglen '\$FRAGLEN' invalid/too small for ${prefix}; using $default_fl" >&2
+        FRAGLEN=$default_fl
+    fi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

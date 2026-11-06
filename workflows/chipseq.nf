@@ -331,6 +331,7 @@ workflow CHIPSEQ {
         )
         ch_phantompeakqualtools_spp_multiqc           = PHANTOMPEAKQUALTOOLS.out.spp
         ch_versions = ch_versions.mix(PHANTOMPEAKQUALTOOLS.out.versions.first())
+        ch_phantompeakqualtools_fraglen = PHANTOMPEAKQUALTOOLS.out.fraglen // [[ meta ], [ FRAGLEN ]]
 
         //
         // MODULE: MultiQC custom content for Phantompeaktools
@@ -450,6 +451,11 @@ workflow CHIPSEQ {
         .map {
             meta, bams, bais ->
                 [ meta , bams[0], bams.size() > 1 ? bams[1] : [] ] // if there is no control BAM, use an empty list
+        }
+        .join(ch_phantompeakqualtools_fraglen, by: [0])
+        .map {
+            meta, ip_bam, control_bam, fraglen ->
+                [ meta, ip_bam, control_bam, fraglen ]
         }
         .set { ch_ip_control_bam }
 
