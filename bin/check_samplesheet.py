@@ -49,11 +49,11 @@ def check_samplesheet(file_in, file_out, no_control=False):
     https://raw.githubusercontent.com/nf-core/test-datasets/chipseq/samplesheet/v2.1/samplesheet_test.csv
 
     UPDATED: to add treatment and cell type columns:
-    sample,fastq_1,fastq_2,replicate,antibody,control,control_replicate,treatment,cell_type
-    SPT5_T0,SRR1822153_1.fastq.gz,SRR1822153_2.fastq.gz,SPT5,1,SPT5_INPUT,1,T0,HeLa
-    SPT5_T0,SRR1822154_1.fastq.gz,SRR1822154_2.fastq.gz,SPT5,2,SPT5_INPUT,2,T0,HeLa
-    SPT5_INPUT,SRR5204809_Spt5-ChIP_Input1_SacCer_ChIP-Seq_ss100k_R1.fastq.gz,SRR5204809_Spt5-ChIP_Input1_SacCer_ChIP-Seq_ss100k_R2.fastq.gz,1,,,,,
-    SPT5_INPUT,SRR5204810_Spt5-ChIP_Input2_SacCer_ChIP-Seq_ss100k_R1.fastq.gz,SRR5204810_Spt5-ChIP_Input2_SacCer_ChIP-Seq_ss100k_R2.fastq.gz,2,,,,,
+    sample,fastq_1,fastq_2,replicate,antibody,control,control_replicate,tissue,condition,treatment
+    SPT5_T0,SRR1822153_1.fastq.gz,SRR1822153_2.fastq.gz,SPT5,1,SPT5_INPUT,1,HeLa,T0,
+    SPT5_T0,SRR1822154_1.fastq.gz,SRR1822154_2.fastq.gz,SPT5,2,SPT5_INPUT,2,HeLa,T0,
+    SPT5_INPUT,SRR5204809_Spt5-ChIP_Input1_SacCer_ChIP-Seq_ss100k_R1.fastq.gz,SRR5204809_Spt5-ChIP_Input1_SacCer_ChIP-Seq_ss100k_R2.fastq.gz,1,,,,,HeLa,,
+    SPT5_INPUT,SRR5204810_Spt5-ChIP_Input2_SacCer_ChIP-Seq_ss100k_R1.fastq.gz,SRR5204810_Spt5-ChIP_Input2_SacCer_ChIP-Seq_ss100k_R2.fastq.gz,2,,,,,HeLa,,
 
     """
 
@@ -61,7 +61,7 @@ def check_samplesheet(file_in, file_out, no_control=False):
     with open(file_in, "r", encoding="utf-8-sig") as fin:
         ## Check header
         MIN_COLS = 3
-        HEADER = ["sample", "fastq_1", "fastq_2", "replicate", "antibody", "control", "control_replicate", "treatment", "cell_type"]
+        HEADER = ["sample", "fastq_1", "fastq_2", "replicate", "antibody", "control", "control_replicate", "tissue", "condition", "treatment"]
         header = [x.strip('"') for x in fin.readline().strip().split(",")]
         if header[: len(HEADER)] != HEADER:
             print(f"ERROR: Please check samplesheet header -> {','.join(header)} != {','.join(HEADER)}")
@@ -88,7 +88,7 @@ def check_samplesheet(file_in, file_out, no_control=False):
                     )
 
                 ## Check sample name entries
-                sample, fastq_1, fastq_2, replicate, antibody, control, control_replicate, treatment, cell_type = lspl[: len(HEADER)]
+                sample, fastq_1, fastq_2, replicate, antibody, control, control_replicate, tissue, condition, treatment = lspl[: len(HEADER)]
                 if sample.find(" ") != -1:
                     print(f"WARNING: Spaces have been replaced by underscores for sample: {sample}")
                     sample = sample.replace(" ", "_")
@@ -164,7 +164,21 @@ def check_samplesheet(file_in, file_out, no_control=False):
                             line,
                         )
 
-                ## Check treatment and cell_type columns have valid values (if present)
+                ## Check that tissue, condition, and treatment columns have valid values (if present)
+                if tissue and tissue.find(" ") != -1:
+                    print(f"WARNING: Spaces have been replaced by underscores for tissue: {tissue}")
+                    tissue = tissue.replace(" ", "_")
+                else:
+                    print(f"WARNING: Tissue column is empty for line {line_number}")
+                    tissue = ''
+
+                if condition and condition.find(" ") != -1:
+                    print(f"WARNING: Spaces have been replaced by underscores for condition: {condition}")
+                    condition = condition.replace(" ", "_")
+                else:
+                    print(f"WARNING: Condition column is empty for line {line_number}")
+                    condition = ''
+
                 if treatment and treatment.find(" ") != -1:
                     print(f"WARNING: Spaces have been replaced by underscores for treatment: {treatment}")
                     treatment = treatment.replace(" ", "_")
@@ -172,25 +186,18 @@ def check_samplesheet(file_in, file_out, no_control=False):
                     print(f"WARNING: Treatment column is empty for line {line_number}")
                     treatment = '' # no treatment specified will be considered as untreated/experimental control
 
-                if cell_type and cell_type.find(" ") != -1:
-                    print(f"WARNING: Spaces have been replaced by underscores for cell type: {cell_type}")
-                    cell_type = cell_type.replace(" ", "_")
-                else:
-                    print(f"WARNING: Cell type column is empty for line {line_number}")
-                    cell_type = ''
-
                 ## Auto-detect paired-end/single-end
-                sample_info = []  ## [single_end, fastq_1, fastq_2, replicate, antibody, control, treatment, cell_type]
+                sample_info = []  ## [single_end, fastq_1, fastq_2, replicate, antibody, control, tissue, condition, treatment]
                 ## Paired-end short reads
                 if sample and fastq_1 and fastq_2:
-                    sample_info = ["0", fastq_1, fastq_2, replicate, antibody, control, treatment, cell_type]
+                    sample_info = ["0", fastq_1, fastq_2, replicate, antibody, control, tissue, condition, treatment]
                 ## Single-end short reads
                 elif sample and fastq_1 and not fastq_2:
-                    sample_info = ["1", fastq_1, fastq_2, replicate, antibody, control, treatment, cell_type]
+                    sample_info = ["1", fastq_1, fastq_2, replicate, antibody, control, tissue, condition, treatment]
                 else:
                     print_error("Invalid combination of columns provided!", "Line {}".format(line_number), line)
 
-                ## Create sample mapping dictionary = {sample: [[ single_end, fastq_1, fastq_2, replicate, antibody, control, treatment, cell_type ]]}
+                ## Create sample mapping dictionary = {sample: [[ single_end, fastq_1, fastq_2, replicate, antibody, control, tissue, condition, treatment ]]}
                 replicate = int(replicate)
                 sample_info = sample_info + lspl[len(HEADER) :]
                 if sample not in sample_mapping_dict:
@@ -218,8 +225,9 @@ def check_samplesheet(file_in, file_out, no_control=False):
                         "replicate",
                         "antibody",
                         "control",
-                        "treatment",
-                        "cell_type",
+                        "tissue",
+                        "condition",
+                        "treatment"
                     ]
                 )
                 + "\n"

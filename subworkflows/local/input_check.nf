@@ -28,9 +28,10 @@ def create_fastq_channel(LinkedHashMap row, String seq_center) {
     meta.single_end = row.single_end.toBoolean()
     meta.antibody   = row.antibody
     meta.control    = row.control
+    meta.tissue  = row.tissue
+    meta.condition  = row.condition
     meta.treatment  = row.treatment
-    meta.cell_type  = row.cell_type
-    //meta.group = "${meta.antibody}_${meta.treatment}_${meta.cell_type}".toString() // i.e. SIN3A_E6R_PFC, so that consensus peaks can be grouped accordingly
+    //meta.group = "${meta.antibody}_${meta.tissue}_${meta.condition}_${meta.treatment}".toString() // i.e. SIN3A_PFC_WT_DMSO, so that consensus peaks can be grouped accordingly
 
     def read_group = "\'@RG\\tID:${meta.id}\\tSM:${meta.id - ~/_T\d+$/}\\tPL:ILLUMINA\\tLB:${meta.id}\\tPU:1\'"
     if (seq_center) {
