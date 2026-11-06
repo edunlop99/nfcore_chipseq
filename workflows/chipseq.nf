@@ -450,7 +450,7 @@ workflow CHIPSEQ {
     ch_ip_control_bam_bai
         .map {
             meta, bams, bais ->
-                [ meta , bams[0], bams.size() > 1 ? bams[1] : [] ] // if there is no control BAM, use an empty list
+                [ meta , bams[0], bams[1] ]
         }
         .join(ch_phantompeakqualtools_fraglen, by: [0])
         .map {
@@ -488,8 +488,8 @@ workflow CHIPSEQ {
         // Create channels: [ "antibody-treatment-cell_type", [ ip_bams ] ]
         ch_ip_control_bam
             .map {
-                meta, ip_bam, control_bam ->
-                    [ meta.group, ip_bam ]
+                meta, ip_bam, control_bam, fraglen ->
+                    [ meta.antibody, ip_bam ]
             }
             .groupTuple()
             .set { ch_antibody_bams }
