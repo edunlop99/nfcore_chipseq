@@ -125,23 +125,21 @@ def check_samplesheet(file_in, file_out, no_control=False):
                         antibody = antibody.replace(" ", "_")
                     if not control and not no_control:
                         print_error(
-                            "Both antibody and control columns must be specified! (If running without control, use the --no_control flag)",
+                            "Both antibody and control columns must be specified! (If running without controls, use the --no_control flag)",
                             "Line {}".format(line_number),
                             line,
                         )
-                    elif control and no_control:
-                        print("WARNING: Control column has been specified but the --no_control flag is set!")
-                    else:
-                        print(f"WARNING: Running without control samples.")
+                    elif not control and no_control:
+                        print(f"WARNING: Running antibody {antibody} without control samples.")
                         control = ''  # Will set control to '' if running without control
-                else:
-                    if not control and not no_control:
+                    elif control and no_control:
                         print_error(
-                            "Control column must be specified for IP samples!",
+                            f"Control column for antibody {antibody} has been specified but the --no_control flag is set!",
                             "Line {}".format(line_number),
                             line,
                         )
-                        sys.exit(1)
+                    else: #control and not no_control (default)
+                        print(f"Running antibody {antibody} with control {control}.")
 
                 ## Check that control samples have valid replicate IDs
                 if control and not no_control:
@@ -158,6 +156,13 @@ def check_samplesheet(file_in, file_out, no_control=False):
                             "Line {}".format(line_number),
                             line,
                         )
+                elif not control and no_control:
+                    if not antibody:
+                        print_error(
+                            "Antibody column must be specified for IP samples!",
+                            "Line {}".format(line_number),
+                            line,
+                        )
 
                 ## Check treatment and cell_type columns have valid values (if present)
                 if treatment and treatment.find(" ") != -1:
@@ -165,7 +170,7 @@ def check_samplesheet(file_in, file_out, no_control=False):
                     treatment = treatment.replace(" ", "_")
                 else:
                     print(f"WARNING: Treatment column is empty for line {line_number}")
-                    treatment = ''
+                    treatment = '' # no treatment specified will be considered as untreated/experimental control
 
                 if cell_type and cell_type.find(" ") != -1:
                     print(f"WARNING: Spaces have been replaced by underscores for cell type: {cell_type}")
