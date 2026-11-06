@@ -3,7 +3,6 @@
 //
 
 include { MACS3_CALLPEAK           } from '../../modules/nf-core/macs3/callpeak/main'
-//include { MACS3_BDGDIFF            } from '../../modules/nf-core/macs3/bdgdiff/main'
 include { HOMER_ANNOTATEPEAKS      } from '../../modules/nf-core/homer/annotatepeaks/main'
 include { HOMER_FINDMOTIFS          } from '../../modules/nf-core/homer/findmotifs/main'
 
@@ -24,6 +23,7 @@ workflow BAM_PEAKS_CALL_QC_ANNOTATE_MACS3_HOMER {
     ch_peak_annotation_header_multiqc // channel: [ header_file ]
     is_narrow_peak                    // boolean: true/false
     skip_peak_annotation              // boolean: true/false
+    skip_findmotifs                   // boolean: true/false
     skip_peak_qc                      // boolean: true/false
 
     main:

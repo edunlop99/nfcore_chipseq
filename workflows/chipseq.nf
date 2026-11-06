@@ -473,6 +473,7 @@ workflow CHIPSEQ {
         ch_peak_annotation_header,
         params.narrow_peak,
         params.skip_peak_annotation,
+        params.skip_findmotifs,
         params.skip_peak_qc
     )
     ch_versions = ch_versions.mix(BAM_PEAKS_CALL_QC_ANNOTATE_MACS3_HOMER.out.versions)
@@ -503,6 +504,7 @@ workflow CHIPSEQ {
             ch_deseq2_clustering_header,
             params.narrow_peak,
             params.skip_peak_annotation,
+            params.skip_findmotifs,
             params.skip_deseq2_qc
         )
         ch_macs3_consensus_bed_lib       = BED_CONSENSUS_QUANTIFY_QC_BEDTOOLS_FEATURECOUNTS_DESEQ2.out.consensus_bed
