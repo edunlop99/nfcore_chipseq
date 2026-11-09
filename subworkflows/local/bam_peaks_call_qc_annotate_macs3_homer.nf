@@ -93,6 +93,9 @@ workflow BAM_PEAKS_CALL_QC_ANNOTATE_MACS3_HOMER {
     ch_plot_homer_annotatepeaks_txt = Channel.empty()
     ch_plot_homer_annotatepeaks_pdf = Channel.empty()
     ch_plot_homer_annotatepeaks_tsv = Channel.empty()
+
+    ch_homer_findmotifs             = Channel.empty()
+    ch_homer_knownmotifs            = Channel.empty()
     if (!skip_peak_annotation) {
         //
         // Annotate peaks with HOMER
