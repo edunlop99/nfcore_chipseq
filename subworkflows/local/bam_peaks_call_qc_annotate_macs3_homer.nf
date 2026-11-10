@@ -13,7 +13,7 @@ include { PLOT_HOMER_ANNOTATEPEAKS } from '../../modules/local/plot_homer_annota
 
 workflow BAM_PEAKS_CALL_QC_ANNOTATE_MACS3_HOMER {
     take:
-    ch_bam                            // channel: [ val(meta), [ ip_bam ], [ control_bam ] ]
+    ch_bam                            // channel: [ val(meta), [ ip_bam ], [ control_bam ], fraglen ]
     ch_fasta                          // channel: [ fasta ]
     ch_gtf                            // channel: [ gtf ]
     macs_gsize                        // integer: value for --macs_gsize parameter
@@ -55,7 +55,7 @@ workflow BAM_PEAKS_CALL_QC_ANNOTATE_MACS3_HOMER {
     ch_bam
         .join(ch_macs3_peaks, by: [0])
         .map {
-            meta, ip_bam, control_bam, peaks ->
+            meta, ip_bam, control_bam, fraglen, peaks  ->
                 [ meta, ip_bam, peaks ]
         }
         .set { ch_bam_peaks }
@@ -94,7 +94,7 @@ workflow BAM_PEAKS_CALL_QC_ANNOTATE_MACS3_HOMER {
     ch_plot_homer_annotatepeaks_pdf = Channel.empty()
     ch_plot_homer_annotatepeaks_tsv = Channel.empty()
 
-    ch_homer_findmotifs              = Channel.empty()
+    ch_homer_findmotifs             = Channel.empty()
     ch_homer_knownmotifs            = Channel.empty()
     if (!skip_peak_annotation) {
         //

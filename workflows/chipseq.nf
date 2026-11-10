@@ -437,16 +437,12 @@ workflow CHIPSEQ {
         ch_macs_gsize = KHMER_UNIQUEKMERS.out.kmers.map { it.text.trim() }
     }
 
-    // Create channels: [ meta, ip_bam, control_bam ]
+    // Create channels: [ meta, ip_bam, control_bam, fraglen ]
     ch_ip_control_bam_bai
-        .map {
-            meta, bams, bais ->
-                [ meta , bams[0], bams[1] ]
-        }
         .join(ch_phantompeakqualtools_fraglen, by: [0])
         .map {
-            meta, ip_bam, control_bam, fraglen ->
-                [ meta, ip_bam, control_bam, fraglen ]
+            meta, bams, bais, fraglen ->
+                [ meta , bams[0], bams[1], fraglen ]
         }
         .set { ch_ip_control_bam }
 
