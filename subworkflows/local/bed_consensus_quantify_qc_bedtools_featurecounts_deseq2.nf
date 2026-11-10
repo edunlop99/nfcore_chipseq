@@ -149,7 +149,7 @@ workflow BED_CONSENSUS_QUANTIFY_QC_BEDTOOLS_FEATURECOUNTS_DESEQ2 {
     //
     // Differential binding analysis with MACS3 BDGDIFF
     //
-
+    
 
     //
     // Differential binding analysis with DiffBind

@@ -486,7 +486,7 @@ workflow CHIPSEQ {
     ch_deseq2_pca_multiqc        = Channel.empty()
     ch_deseq2_clustering_multiqc = Channel.empty()
     if (!params.skip_consensus_peaks) {
-        // Create channels: [ "antibody-treatment-cell_type", [ ip_bams ] ]
+        // Create channels: [ antibody, [ ip_bams ] ]
         ch_ip_control_bam
             .map {
                 meta, ip_bam, control_bam, fraglen ->
