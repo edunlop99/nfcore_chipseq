@@ -9,7 +9,7 @@ process MACS3_CALLPEAK {
         'biocontainers/macs3:3.0.1--py311h0152c62_3' }"
 
     input:
-    tuple val(meta), path(ipbam), path(controlbam), env(fraglen)
+    tuple val(meta), path(ipbam), path(controlbam), val(fraglen)
     val   macs3_gsize
 
     output:
