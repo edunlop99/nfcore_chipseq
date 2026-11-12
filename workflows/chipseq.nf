@@ -24,7 +24,7 @@ include { BAM_FILTER_BAMTOOLS    } from '../subworkflows/local/bam_filter_bamtoo
 include { BAM_BEDGRAPH_BIGWIG_BEDTOOLS_UCSC                       } from '../subworkflows/local/bam_bedgraph_bigwig_bedtools_ucsc'
 include { BAM_PEAKS_CALL_QC_ANNOTATE_MACS3_HOMER                  } from '../subworkflows/local/bam_peaks_call_qc_annotate_macs3_homer.nf'
 include { BED_CONSENSUS_QUANTIFY_QC_BEDTOOLS_FEATURECOUNTS_DESEQ2 } from '../subworkflows/local/bed_consensus_quantify_qc_bedtools_featurecounts_deseq2.nf'
-include { DIFFERENTIAL_BINDING_ANALYSIS                           } from '../subworkflows/local/differential_binding_analysis.nf'
+include { DIFFERENTIAL_BINDING                                    } from '../subworkflows/local/differential_binding_analysis.nf'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
