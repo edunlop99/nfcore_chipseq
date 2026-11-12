@@ -10,8 +10,8 @@
 //   One of each                    -> skipped with a warning
 //
 
-include { DIFFBIND      } from '../../../modules/local/diffbind/main'
-include { MACS3_BDGDIFF } from '../../../modules/local/macs3_bdgdiff/main'
+include { DIFFBIND      } from '../../../modules/local/diffbind.nf'
+include { MACS3_BDGDIFF } from '../../../modules/nf-core/macs3/bdgdiff/main.nf'
 
 workflow DIFFERENTIAL_BINDING {
 
