@@ -10,9 +10,6 @@ include { MACS3_CONSENSUS        } from '../../modules/local/macs3_consensus'
 include { ANNOTATE_BOOLEAN_PEAKS } from '../../modules/local/annotate_boolean_peaks'
 include { DESEQ2_QC              } from '../../modules/local/deseq2_qc'
 
-//include { MACS3_BDGDIFF } from '../../modules/nf-core/macs3/bdgdiff/main'
-//include { DIFFBIND } from '../../modules/local/diffbind.nf'
-
 workflow BED_CONSENSUS_QUANTIFY_QC_BEDTOOLS_FEATURECOUNTS_DESEQ2 {
     take:
     ch_peaks                            // channel: [ val(meta), [ peaks ] ]
@@ -49,12 +46,12 @@ workflow BED_CONSENSUS_QUANTIFY_QC_BEDTOOLS_FEATURECOUNTS_DESEQ2 {
         .map {
             antibody, groups, peaks ->
                 def meta_new = [:]
-                meta_new.id = antibody
+                meta_new.id = antibody // meta.id will now be the antibody name
                 meta_new.multiple_groups = groups.size() > 1
                 meta_new.replicates_exist = groups.max { it.value }.value > 1
                 [ meta_new, peaks ]
         }
-        .set { ch_antibody_peaks }
+        set { ch_antibody_peaks }
         
     //
     // Generate consensus peaks across samples
@@ -84,14 +81,6 @@ workflow BED_CONSENSUS_QUANTIFY_QC_BEDTOOLS_FEATURECOUNTS_DESEQ2 {
         )
         ch_versions = ch_versions.mix(ANNOTATE_BOOLEAN_PEAKS.out.versions)
     }
-
-    // if (!skip_findmotifs) {
-    //     HOMER_FINDMOTIFS (
-    //         MACS3_CONSENSUS.out.bed,
-    //         ch_fasta
-    //     )
-    //     ch_versions = ch_versions.mix(HOMER_FINDMOTIFS.out.versions)
-    // }
 
     // Create channels: [ meta, [ ip_bams ], saf ]
     MACS3_CONSENSUS
@@ -145,24 +134,6 @@ workflow BED_CONSENSUS_QUANTIFY_QC_BEDTOOLS_FEATURECOUNTS_DESEQ2 {
         ch_deseq2_qc_size_factors  = DESEQ2_QC.out.size_factors
         ch_versions = ch_versions.mix(DESEQ2_QC.out.versions)
     }
-
-    //
-    // Differential binding analysis with MACS3 BDGDIFF
-    //
-    
-
-    //
-    // Differential binding analysis with DiffBind
-    //
-    ch_antibody_peaks
-        .filter { meta, metas, peaks -> meta.contrast_factors }   // run only if something is testable
-        .set { ch_for_diffbind }
-
-    DIFFBIND (
-        ch_for_diffbind
-    )
-    ch_versions = ch_versions.mix(DIFFBIND.out.versions)
-
 
     emit:
     consensus_bed           = MACS3_CONSENSUS.out.bed           // channel: [ bed ]

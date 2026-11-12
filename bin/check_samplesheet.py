@@ -60,7 +60,7 @@ def check_samplesheet(file_in, file_out, no_control=False):
     sample_mapping_dict = {}
     with open(file_in, "r", encoding="utf-8-sig") as fin:
         ## Check header
-        MIN_COLS = 3
+        MIN_COLS = 3 
         HEADER = ["sample", "fastq_1", "fastq_2", "replicate", "antibody", "control", "control_replicate", "tissue", "condition", "treatment"]
         header = [x.strip('"') for x in fin.readline().strip().split(",")]
         if header[: len(HEADER)] != HEADER:
@@ -168,23 +168,23 @@ def check_samplesheet(file_in, file_out, no_control=False):
                 if tissue and tissue.find(" ") != -1:
                     print(f"WARNING: Spaces have been replaced by underscores for tissue: {tissue}")
                     tissue = tissue.replace(" ", "_")
-                else:
+                elif not tissue:
                     print(f"WARNING: Tissue column is empty for line {line_number}")
                     tissue = ''
 
                 if condition and condition.find(" ") != -1:
                     print(f"WARNING: Spaces have been replaced by underscores for condition: {condition}")
                     condition = condition.replace(" ", "_")
-                else:
+                elif not condition:
                     print(f"WARNING: Condition column is empty for line {line_number}")
                     condition = ''
 
                 if treatment and treatment.find(" ") != -1:
                     print(f"WARNING: Spaces have been replaced by underscores for treatment: {treatment}")
                     treatment = treatment.replace(" ", "_")
-                else:
+                elif not treatment:
                     print(f"WARNING: Treatment column is empty for line {line_number}")
-                    treatment = '' # no treatment specified will be considered as untreated/experimental control
+                    treatment = ''
 
                 ## Auto-detect paired-end/single-end
                 sample_info = []  ## [single_end, fastq_1, fastq_2, replicate, antibody, control, tissue, condition, treatment]
@@ -197,7 +197,7 @@ def check_samplesheet(file_in, file_out, no_control=False):
                 else:
                     print_error("Invalid combination of columns provided!", "Line {}".format(line_number), line)
 
-                ## Create sample mapping dictionary = {sample: [[ single_end, fastq_1, fastq_2, replicate, antibody, control, tissue, condition, treatment ]]}
+                ## Create sample mapping dictionary = { sample: {replicate: [ sample_info ] } }
                 replicate = int(replicate)
                 sample_info = sample_info + lspl[len(HEADER) :]
                 if sample not in sample_mapping_dict:
@@ -214,6 +214,35 @@ def check_samplesheet(file_in, file_out, no_control=False):
     if len(sample_mapping_dict) > 0:
         out_dir = os.path.dirname(file_out)
         make_dir(out_dir)
+
+        # Before writing, check if any columns are empty for all samples
+        ANTIBODY_IDX = 4
+        FACTOR_IDX   = {"tissue": 6, "condition": 7, "treatment": 8}
+
+        for col, idx in FACTOR_IDX.items():
+            # IP samples only, grouped by antibody: one entry per sample + replicate
+            by_antibody = {}
+            for s, reps in sample_mapping_dict.items():
+                for r, runs in reps.items():
+                    antibody = runs[0][ANTIBODY_IDX]
+                    if not antibody:                         # input/control sample
+                        continue
+                    values = {run[idx] for run in runs}
+                    if len(values) > 1:                      # runs of one sample must agree
+                        print_error(f"Runs of {s} rep {r} have different '{col}' values: {', '.join(sorted(values))}",
+                                    "Sample", s)
+                    by_antibody.setdefault(antibody, []).append((s, r, runs[0][idx]))
+
+            for antibody, entries in by_antibody.items():
+                blank = [(s, r) for s, r, v in entries if not v]
+                if len(blank) == len(entries):
+                    print(f"WARNING: '{col}' is blank for every {antibody} sample; it will not be used as a factor for {antibody}")
+                elif blank:
+                    where = ", ".join(f"{s} rep {r}" for s, r in blank)
+                    print_error(f"'{col}' is blank for some {antibody} samples. "
+                                f"Fill it in for every {antibody} sample or leave it blank for all of them.",
+                                "Samples", where)
+                            
         with open(file_out, "w") as fout:
             fout.write(
                 ",".join(

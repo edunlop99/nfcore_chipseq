@@ -24,6 +24,7 @@ include { BAM_FILTER_BAMTOOLS    } from '../subworkflows/local/bam_filter_bamtoo
 include { BAM_BEDGRAPH_BIGWIG_BEDTOOLS_UCSC                       } from '../subworkflows/local/bam_bedgraph_bigwig_bedtools_ucsc'
 include { BAM_PEAKS_CALL_QC_ANNOTATE_MACS3_HOMER                  } from '../subworkflows/local/bam_peaks_call_qc_annotate_macs3_homer.nf'
 include { BED_CONSENSUS_QUANTIFY_QC_BEDTOOLS_FEATURECOUNTS_DESEQ2 } from '../subworkflows/local/bed_consensus_quantify_qc_bedtools_featurecounts_deseq2.nf'
+include { DIFFERENTIAL_BINDING_ANALYSIS                           } from '../subworkflows/local/differential_binding_analysis.nf'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -400,11 +401,11 @@ workflow CHIPSEQ {
 
     if ( params.no_control == false ) { // if running with control samples
         ch_genome_bam_bai
-        .map {
-            meta, bam, bai ->
-                meta.control ? null : [ meta.id, [ bam ] , [ bai ] ] // if meta.control is null, this is a control sample with a correspondng IP
-        }
-        .set { ch_control_bam_bai } // [meta, bam, bai] for control samples without corresponding IP
+            .map {
+                meta, bam, bai ->
+                    meta.control ? null : [ meta.id, [ bam ] , [ bai ] ] // if meta.control is null, this is a control sample with a correspondng IP
+            }
+            .set { ch_control_bam_bai } // [meta, bam, bai] for control samples without corresponding IP
 
         ch_genome_bam_bai
             .map {
@@ -515,6 +516,21 @@ workflow CHIPSEQ {
         ch_versions = ch_versions.mix(BED_CONSENSUS_QUANTIFY_QC_BEDTOOLS_FEATURECOUNTS_DESEQ2.out.versions)
     }
 
+    //
+    // SUBWORKFLOW: Differential binding analysis
+    //
+    if (!params.skip_differential_binding) {
+        DIFFERENTIAL_BINDING_ANALYSIS (
+            BAM_PEAKS_CALL_QC_ANNOTATE_MACS3_HOMER.out.peaks,
+            BAM_PEAKS_CALL_QC_ANNOTATE_MACS3_HOMER.out.bedgraph,
+            BAM_PEAKS_CALL_QC_ANNOTATE_MACS3_HOMER.out.xls,
+            ch_ip_control_bam_bai,
+            params.narrow_peak,
+            ch_macs_gsize
+        )
+        ch_versions = ch_versions.mix(DIFFERENTIAL_BINDING_ANALYSIS.out.versions)
+    }
+    
     //
     // MODULE: Create IGV session
     //

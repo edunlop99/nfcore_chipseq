@@ -93,9 +93,9 @@ workflow BAM_PEAKS_CALL_QC_ANNOTATE_MACS3_HOMER {
     ch_plot_homer_annotatepeaks_txt = Channel.empty()
     ch_plot_homer_annotatepeaks_pdf = Channel.empty()
     ch_plot_homer_annotatepeaks_tsv = Channel.empty()
-
     ch_homer_findmotifs             = Channel.empty()
     ch_homer_knownmotifs            = Channel.empty()
+    
     if (!skip_peak_annotation) {
         //
         // Annotate peaks with HOMER
@@ -107,11 +107,11 @@ workflow BAM_PEAKS_CALL_QC_ANNOTATE_MACS3_HOMER {
         )
         ch_homer_annotatepeaks = HOMER_ANNOTATEPEAKS.out.txt
         ch_versions = ch_versions.mix(HOMER_ANNOTATEPEAKS.out.versions.first())
-        if (!skip_findmotifs) {
+        if (!skip_findmotifs || !is_narrow_peak) {  // automatically skip peak annotation for broad peaks
             //
             // Find motifs with HOMER
             //
-            ch_motif_input = params.narrow_peak ? MACS3_CALLPEAK.out.bed : ch_macs3_peaks // if narrow_peak, use summits; broad peaks use entire peak region
+            ch_motif_input = MACS3_CALLPEAK.out.bed 
             HOMER_FINDMOTIFS (
                 ch_motif_input,
                 ch_fasta
