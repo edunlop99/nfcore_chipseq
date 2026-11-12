@@ -520,7 +520,7 @@ workflow CHIPSEQ {
     // SUBWORKFLOW: Differential binding analysis
     //
     if (!params.skip_differential_binding) {
-        DIFFERENTIAL_BINDING_ANALYSIS (
+        DIFFERENTIAL_BINDING (
             BAM_PEAKS_CALL_QC_ANNOTATE_MACS3_HOMER.out.peaks,
             BAM_PEAKS_CALL_QC_ANNOTATE_MACS3_HOMER.out.bedgraph,
             BAM_PEAKS_CALL_QC_ANNOTATE_MACS3_HOMER.out.xls,
@@ -528,7 +528,7 @@ workflow CHIPSEQ {
             params.narrow_peak,
             ch_macs_gsize
         )
-        ch_versions = ch_versions.mix(DIFFERENTIAL_BINDING_ANALYSIS.out.versions)
+        ch_versions = ch_versions.mix(DIFFERENTIAL_BINDING.out.versions)
     }
     
     //
